@@ -1,0 +1,2 @@
+alias explorer='xdg-open'
+alias cheat='curl cheat.sh/'
