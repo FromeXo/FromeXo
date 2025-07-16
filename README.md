@@ -1,5 +1,9 @@
 ### Hi there 👋
 
+Tbh, this is just my "config" for my computers. :P
+
+Cheers :beers:
+
 <!--
 **FromeXo/FromeXo** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
