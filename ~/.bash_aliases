@@ -1,0 +1,2 @@
+alias cheat='curl cheat.sh/'
+alias rm='rm -I --preserve-root'
