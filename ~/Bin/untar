@@ -1,0 +1,6 @@
+ #!/usr/bin/env bash
+
+ readonly SCRIPT_VERSION="0.1.0"
+ readonly SCRIPT_PATH=$(realpath "$0")
+ readonly SCRIPT_FILE=${SCRIPT_PATH##*/}
+ readonly SCRIPT_DIR=${SCRIPT_PATH%/*}
