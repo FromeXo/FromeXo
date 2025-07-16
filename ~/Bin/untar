@@ -1,6 +1,69 @@
- #!/usr/bin/env bash
+#!/usr/bin/env bash
 
- readonly SCRIPT_VERSION="0.1.0"
- readonly SCRIPT_PATH=$(realpath "$0")
- readonly SCRIPT_FILE=${SCRIPT_PATH##*/}
- readonly SCRIPT_DIR=${SCRIPT_PATH%/*}
+readonly SCRIPT_VERSION="0.1.0"
+readonly SCRIPT_PATH=$(realpath "$0")
+readonly SCRIPT_FILE=${SCRIPT_PATH##*/}
+readonly SCRIPT_DIR=${SCRIPT_PATH%/*}
+
+# Function to extract the file extension
+extract_extension() {
+  local fname="$1"
+  # List of common compound tar extensions
+  archive_ext="tar.gz tar.bz2 tar.xz tar.zst tar.lz tar.7z tar.lzma tgz tbz tbz2 txz"
+
+  for ext in $archive_ext; do
+    # Check if filename ends with the compound extension
+    if [[ "$fname" =~ \.${ext}$ ]]; then
+      echo "$ext"
+      return
+    fi
+  done
+
+  # If no compound extension, extract the last extension
+  if [[ "$fname" =~ \.([^.]+)$ ]]; then
+    echo "${BASH_REMATCH[1]}"
+  else
+    echo ""
+  fi
+}
+
+
+# Check if a filename is provided as an argument
+if [ -n "$1" ]; then
+  filename="$1"
+else
+  exit 1
+fi
+
+outdir=""
+if [ -n "$2" ]; then
+    outdir="-C ${2}"
+fi;
+
+
+
+extension=$(extract_extension "$filename")
+# Check if an extension was found
+if [ -z "$extension" ]; then
+  echo "No valid extension found for '$filename'"
+else
+    case "$extension" in
+        "tar.gz"|"tgz")
+            tar -xvzf ${filename} ${outdir}
+            ;;
+          "tar.bz2"|"tbz"|"tbz2")
+            tar -xvjf ${filename} ${outdir}
+          ;;
+          "tar.xz"|"txz")
+            tar -xvJf ${filename} ${outdir}
+          ;;
+          "tar.zst")
+            tar --zstd -xvf ${filename} ${outdir}
+          ;;
+          "tar.lz")
+            tar --lzip -xvf ${filename} ${outdir}
+          ;;
+          "tar.lzma")
+            tar --lzma -xvf ${filename} ${outdir}
+    esac
+fi
