@@ -1,0 +1,2 @@
+export CDPATH="~:${CDPATH}"
+export PATH="${PATH}:~/Bin"
