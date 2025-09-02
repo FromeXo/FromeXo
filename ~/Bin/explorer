@@ -5,11 +5,43 @@ readonly SCRIPT_PATH=$(realpath "$0")
 readonly SCRIPT_FILE=${SCRIPT_PATH##*/}
 readonly SCRIPT_DIR=${SCRIPT_PATH%/*}
 
+# Function to display usage information
+usage() {
+    echo "Explorer v${SCRIPT_VERSION}"
+    echo "Usage: $SCRIPT_FILE [path]"
+    echo "Opens the specified path in the default file explorer."
+    echo "If no path is provided, opens the current directory."
+    exit 0
+}
 
-arg="$1"
-
-if [ "$#" -eq "0" ]; then
-  arg="."
+# Check for --help argument
+if [ "$1" = "--help" ]; then
+    usage
 fi
 
-xdg-open "$arg"
+# Check if more than one argument is provided
+if [ "$#" -gt 1 ]; then
+    echo "Error: Too many arguments."
+    usage
+fi
+
+# Set default argument to current directory if none provided
+arg="${1:-.}"
+
+# Check if the path exists
+if [ ! -e "$arg" ]; then
+    echo "Error: Path '$arg' does not exist."
+    exit 1
+fi
+
+# Check if the path is a directory or file
+if [ ! -d "$arg" ] && [ ! -f "$arg" ]; then
+    echo "Error: Path '$arg' is neither a file nor a directory."
+    exit 1
+fi
+
+# Attempt to open the path with xdg-open
+if ! xdg-open "$arg" 2>/dev/null; then
+    echo "Error: Failed to open '$arg' with xdg-open."
+    exit 1
+fi
