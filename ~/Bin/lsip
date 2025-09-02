@@ -22,7 +22,7 @@ check_dependencies() {
 }
 
 usage() {
-	echo "List IPs version $SCRIPT_VERSION"
+	echo "List IPs v${SCRIPT_VERSION}"
 	echo "Usage: $SCRIPT_FILE [--no-color] [--no-format] [--interface <interface>]"
 	echo "Options:"
 	echo "  --no-color       Disable colored output"
