@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+
+readonly SCRIPT_VERSION="0.1.0"
+readonly SCRIPT_PATH=$(realpath "$0")
+readonly SCRIPT_FILE=${SCRIPT_PATH##*/}
+readonly SCRIPT_DIR=${SCRIPT_PATH%/*}
+
+# ANSI color codes
+BLUE='\033[1;34m'
+GREEN='\033[1;32m'
+NC='\033[0m' # No Color
+
+# Check for required dependencies
+check_dependencies() {
+  local deps=("ip" "jq")
+  for dep in "${deps[@]}"; do
+    if ! command -v "$dep" &> /dev/null; then
+      echo -e "${BLUE}[ERROR]${NC} Required command '$dep' is not installed."
+      exit 1
+    fi
+  done
+}
+
+usage() {
+	echo "List IPs version $SCRIPT_VERSION"
+	echo "Usage: $SCRIPT_FILE [--no-color] [--no-format] [--interface <interface>]"
+	echo "Options:"
+	echo "  --no-color       Disable colored output"
+	echo "  --no-format      Output plain text without headers or formatting (for scripting)"
+	echo "  --interface      Specify a network interface (e.g., eth0)"
+	echo "  --help           Display this help message"
+	exit 0
+}
+
+# Parse command-line arguments
+USE_COLOR=1
+NO_FORMAT=0
+INTERFACE=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --no-color)
+      USE_COLOR=0
+      shift
+      ;;
+    --no-format)
+      NO_FORMAT=1
+      shift
+      ;;
+    --interface)
+      INTERFACE="$2"
+      shift 2
+      ;;
+    --help)
+      usage
+      ;;
+    *)
+      echo -e "${BLUE}[ERROR]${NC} Unknown option: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+# Function to print formatted output
+print_ips() {
+  local header="Interface IP Address"
+  local separator="-------------------"
+  local ip_data
+
+  # Fetch IP data using ip and jq
+  if [[ -n "$INTERFACE" ]]; then
+    ip_data=$(ip -j -4 addr show "$INTERFACE" 2>/dev/null)
+  else
+    ip_data=$(ip -j -4 addr show)
+  fi
+
+  # Check if ip_data is empty or invalid
+  if [[ -z "$ip_data" || "$ip_data" == "[]" ]]; then
+    if [[ $NO_FORMAT -eq 0 ]]; then
+      echo -e "${BLUE}[INFO]${NC} No IP addresses found for interface${INTERFACE:+ '$INTERFACE'}."
+    fi
+    exit 0
+  fi
+
+  # Process IP data
+  local output
+  output=$(echo "$ip_data" | jq -r '.[] | select(.addr_info != []) | .addr_info[] | .label + ":" + .local' 2>/dev/null)
+
+  if [[ -z "$output" ]]; then
+    if [[ $NO_FORMAT -eq 0 ]]; then
+      echo -e "${BLUE}[INFO]${NC} No valid IPv4 addresses found."
+    fi
+    exit 0
+  fi
+
+  # Print output based on format option
+  if [[ $NO_FORMAT -eq 1 ]]; then
+    echo "$output"
+  else
+    # Print header
+    if [[ $USE_COLOR -eq 1 ]]; then
+      echo -e "${BLUE}$header${NC}"
+      echo -e "${BLUE}$separator${NC}"
+    else
+      echo "$header"
+      echo "$separator"
+    fi
+
+    # Format and print IP addresses
+    while IFS=':' read -r label ip; do
+      if [[ $USE_COLOR -eq 1 ]]; then
+        printf "${GREEN}%-20s${NC} %s\n" "$label" "$ip"
+      else
+        printf "%-20s %s\n" "$label" "$ip"
+      fi
+    done <<< "$output" | column -t
+  fi
+}
+
+# Main execution
+check_dependencies
+
+# Add timestamp and hostname for context (only for formatted output)
+if [[ $NO_FORMAT -eq 0 ]]; then
+  if [[ $USE_COLOR -eq 1 ]]; then
+    echo -e "${BLUE}Network Interface IP Addresses (Host: $(hostname), $(date))${NC}"
+  else
+    echo "Network Interface IP Addresses (Host: $(hostname), $(date))"
+  fi
+  echo
+fi
+
+print_ips
